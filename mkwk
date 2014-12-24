@@ -1,0 +1,79 @@
+#!/bin/bash
+
+export CVSROOT=cmadmin@cmputl-po-3p:/opt/cm/cmsys/cvs/root
+current_path=/data/Release_elements/current
+user=`whoami`
+
+usage() {
+    echo
+    echo "usage: $0 <work area number> <module with branch>"
+    echo "   ie: $0 CR-9999 CFX_BR_MODULE_1_0_0_0"
+    echo
+    echo "   or: $0 <work area number/module with branch>"
+    echo "   ie: $0 CR-9999/CFX_BR_MODULE_1_0_0_0"
+    echo
+    exit 1
+}
+
+if [ $# -eq 1 ]; then
+    current_dir=`echo $1 | awk 'BEGIN { FS = "/" } ; { print $1 }'`
+    branch=`echo $1 | awk 'BEGIN { FS = "/" } ; { print $2 }'`
+elif [ $# -eq 2 ]; then
+    current_dir=$1
+    branch=$2
+else
+    usage
+fi
+
+module=`echo $branch | sed 's/_[0-9]*_[0-9]*_[0-9]*_[0-9]*//g'`
+
+full_path=${current_path}/${current_dir}
+if [ ! -e $full_path ];then
+    mkdir -p $full_path
+    if [ $user != 'cmadmin' ]; then
+        sudo chown cmadmin:cmadmin $full_path
+    fi
+fi
+
+cd $full_path
+
+if [ -e ./$branch.gz ]; then
+    if [ ! -e ./IGNORE ]; then
+        mkdir ./IGNORE
+    fi
+    mv ./$branch.gz ./IGNORE/${branch}__`date +%Y%m%d`.gz
+    if [ -e ./${branch}__sourceNBB.gz ]; then
+        mv ./${branch}__sourceNBB.gz ./IGNORE/${branch}__`date +%Y%m%d`__sourceNBB.gz
+    fi
+    if [ -e ./${branch}__sourceOBB.gz ]; then
+        mv ./${branch}__sourceOBB.gz ./IGNORE/${branch}__`date +%Y%m%d`__sourceOBB.gz
+    fi
+fi
+
+if [ -e ./$branch ]; then
+    if [ ! -e ./IGNORE ]; then
+        mkdir ./IGNORE
+    fi
+    mv ./$branch ./IGNORE/${branch}__`date +%Y%m%d`
+fi
+
+cvs checkout -P -r $branch $module
+status=$?
+
+if [ ! $status -eq 0 ]; then
+    echo "apparently cvs checkout not successful"
+    exit
+fi
+
+mv $module $branch
+
+tar cfz ${branch}.gz $branch
+
+if [ $user != 'cmadmin' ]; then
+    sudo chown -R cmadmin:cmadmin ./*
+fi
+
+echo
+echo "work area:"
+find $full_path -maxdepth 1
+echo
