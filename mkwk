@@ -42,11 +42,8 @@ if [ -e ./$branch.gz ]; then
         mkdir ./IGNORE
     fi
     mv ./$branch.gz ./IGNORE/${branch}__`date +%Y%m%d`.gz
-    if [ -e ./${branch}__sourceNBB.gz ]; then
-        mv ./${branch}__sourceNBB.gz ./IGNORE/${branch}__`date +%Y%m%d`__sourceNBB.gz
-    fi
-    if [ -e ./${branch}__sourceOBB.gz ]; then
-        mv ./${branch}__sourceOBB.gz ./IGNORE/${branch}__`date +%Y%m%d`__sourceOBB.gz
+    if [ -e ./${branch}__source.gz ]; then
+        mv ./${branch}__source.gz ./IGNORE/${branch}__`date +%Y%m%d`__source.gz
     fi
 fi
 
